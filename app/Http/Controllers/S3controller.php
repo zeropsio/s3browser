@@ -18,12 +18,12 @@ class S3Controller extends Controller
     {
         $sortBy = $request->get('sortBy', 'created_at');
         $sortOrder = $request->get('sortOrder', 'desc');
-        $maxKeys = 1000; // Max entries per S3 request
-        $perPage = 24; // Entries per page for the UI
-        $page = $request->get('page', 1); // Laravel pagination current page
-        $continuationToken = $request->get('continuationToken', null); // S3 continuation token
+        $maxKeys = 1000;
+        $perPage = 24;
+        $page = $request->get('page', 1);
+        $continuationToken = $request->get('continuationToken', null);
 
-        // Initialize the S3 client
+
         $s3Client = new S3Client([
             'region' => config('filesystems.disks.s3.region'),
             'version' => 'latest',
@@ -37,22 +37,18 @@ class S3Controller extends Controller
 
         $bucket = config('filesystems.disks.s3.bucket');
 
-        // List all objects in the S3 bucket using the ContinuationToken for pagination
         $allFiles = collect();
         $params = [
             'Bucket' => $bucket,
             'MaxKeys' => $maxKeys,
         ];
 
-        // Use the continuation token if provided
         if ($continuationToken) {
             $params['ContinuationToken'] = $continuationToken;
         }
 
-        // Fetch files from S3
         $result = $s3Client->listObjectsV2($params);
-//        dd($result);
-        // Collect the files and store them
+
         $files = collect($result['Contents'])->map(function ($file) {
             return [
                 'path' => $file['Key'],
@@ -64,10 +60,8 @@ class S3Controller extends Controller
 
         $allFiles = $allFiles->merge($files);
 
-        // Check if more files exist
         $nextContinuationToken = $result['IsTruncated'] ? $result['NextContinuationToken'] : null;
 
-        // Sort the files
         if ($sortBy === 'name') {
             $allFiles = $allFiles->sortBy('path', SORT_REGULAR, $sortOrder === 'desc');
         } elseif ($sortBy === 'created_at') {
@@ -76,8 +70,6 @@ class S3Controller extends Controller
             $allFiles = $allFiles->sortBy('size', SORT_REGULAR, $sortOrder === 'desc');
         }
 
-
-        // Handle pagination for the UI
         $paginatedFiles = new LengthAwarePaginator(
             $allFiles->forPage($page, $perPage),
             $allFiles->count(),
@@ -86,18 +78,17 @@ class S3Controller extends Controller
             ['path' => $request->url()]
         );
 
-        // Get the total number of files in the S3 bucket
         $totalFileCount = $this->getTotalFileCount($s3Client, $bucket);
 
-        // Retrieve connection information from the environment or config
+        // TODO: print out for debug info in view
         $connectionInfo = [
-            'AWS Access Key ID' => config('filesystems.disks.s3.key'),
+            'key' => config('filesystems.disks.s3.key'),
             'bucket_name' => config('filesystems.disks.s3.bucket'),
-            'AWS Region' => config('filesystems.disks.s3.region'),
-            'AWS Endpoint' => config('filesystems.disks.s3.endpoint'),
+            'region' => config('filesystems.disks.s3.region'),
+            'endpoint' => config('filesystems.disks.s3.endpoint'),
         ];
 
-        // Return the view with paginated files, connection info, total file count, and continuation token
+
         return view('index', compact('paginatedFiles', 'connectionInfo', 'nextContinuationToken', 'totalFileCount'));
     }
 
@@ -112,7 +103,6 @@ class S3Controller extends Controller
     {
         $filePath = $request->input('filePath');
 
-        // Delete the file from S3
         Storage::disk('s3')->delete($filePath);
 
         return response()->json([
@@ -128,16 +118,12 @@ class S3Controller extends Controller
      */
     public function uploadTestFile()
     {
-        // Create some test content
-        $testContent = "This is a test file uploaded on " . now();
 
-        // Define a test file name with a unique timestamp
+        $testContent = "This is a test file uploaded on " . now();
         $fileName = 'test-file-' . time() . '.txt';
 
-        // Upload the file to S3
         Storage::disk('s3')->put($fileName, $testContent);
 
-        // Return a success message with the file name
         return response()->json([
             'message' => 'Test file uploaded successfully',
             'file_name' => $fileName,
@@ -160,23 +146,18 @@ class S3Controller extends Controller
         do {
             $params = [
                 'Bucket' => $bucket,
-                'MaxKeys' => 1000, // Max allowed by S3 per request
+                'MaxKeys' => 1000,
             ];
 
             if ($continuationToken) {
                 $params['ContinuationToken'] = $continuationToken;
             }
 
-            // Fetch the list of files
             $result = $s3Client->listObjectsV2($params);
-
-            // Count the number of files in the current batch
             $totalCount += isset($result['KeyCount']) ? $result['KeyCount'] : 0;
-
-            // Check if there's more files to paginate
             $continuationToken = isset($result['NextContinuationToken']) ? $result['NextContinuationToken'] : null;
 
-        } while ($continuationToken); // Continue until there are no more files
+        } while ($continuationToken);
 
         return $totalCount;
     }

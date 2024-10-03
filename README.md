@@ -2,6 +2,9 @@
 
 This project is a simple Laravel-based browser for viewing and managing files stored on an S3 bucket. It is designed for development purposes, providing an interface for listing, uploading, and deleting files.
 
+![s3browser](https://github.com/zeropsio/recipe-shared-assets/blob/main/covers/svg/cover-s3browser.svg)
+
+
 ## Features
 
 - **File Listing**: Browse all files in the S3 bucket with pagination.
