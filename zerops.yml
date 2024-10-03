@@ -1,0 +1,40 @@
+zerops:
+  - setup: s3browser
+
+    build:
+      base: php@8.3
+
+      buildCommands:
+        - composer install --optimize-autoloader --no-dev
+      deployFiles: ./
+      cache:
+        - vendor
+        - composer.lock
+
+
+    run:
+      base: php-nginx@8.3
+      envVariables:
+        APP_NAME: ZeropsS3Browser
+        APP_DEBUG: true
+        APP_ENV: production
+        APP_LOCALE: en
+
+        SESSION_DRIVER: file
+
+        DB_CONNECTION:
+        DB_DATABASE:
+        DB_HOST:
+        DB_USERNAME:
+        DB_PASSWORD:
+        DB_PORT:
+
+        AWS_ACCESS_KEY_ID: ${storage_accessKeyId}
+        AWS_REGION: us-east-1
+        AWS_BUCKET: ${storage_bucketName}
+        AWS_ENDPOINT: ${storage_apiUrl}
+        AWS_SECRET_ACCESS_KEY: ${storage_secretAccessKey}
+        AWS_URL: ${storage_apiUrl}/${storage_bucketName}
+        AWS_USE_PATH_STYLE_ENDPOINT: true
+
+      siteConfigPath: site.conf.tmpl
