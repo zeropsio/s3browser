@@ -16,7 +16,7 @@ class S3Controller extends Controller
      */
     public function index(Request $request)
     {
-        $sortBy = $request->get('sortBy', 'name');
+        $sortBy = $request->get('sortBy', 'created_at');
         $sortOrder = $request->get('sortOrder', 'desc');
         $maxKeys = 1000; // Max entries per S3 request
         $perPage = 24; // Entries per page for the UI
