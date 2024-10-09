@@ -28,7 +28,7 @@ class S3Controller extends Controller
             'region' => config('filesystems.disks.s3.region'),
             'version' => 'latest',
             'endpoint' => config('filesystems.disks.s3.endpoint'),
-            'use_path_style_endpoint' => true,
+            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint'),
             'credentials' => [
                 'key' => config('filesystems.disks.s3.key'),
                 'secret' => config('filesystems.disks.s3.secret'),
